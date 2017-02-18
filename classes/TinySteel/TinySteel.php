@@ -28,7 +28,6 @@ class TinySteel {
         $keys = array_keys($array);
         foreach(array_keys($required_keys) as $key){
             if(!in_array($key, $keys) || !file_exists($array[$key])){
-                $this->throw_sre('The configured '.$key.' directory does not exist or is invalid. It has been ignored and the default was used instead.');
                 $array[$key] = $required_keys[$key];
             }
         }
@@ -77,9 +76,7 @@ class TinySteel {
 
     private function require_includes() {
         if (!file_exists($this->dir . '/../../include')) {
-            if (!is_writable($this->dir . '/../..')) {
-                $this->throw_sre('Failed to create missing \'include\' directory. Check that PHP has the proper execution permissions.');
-            } else {
+            if (is_writable($this->dir . '/../..')) {
                 mkdir($this->dir . '/../../include', 0755, true);
                 $this->require_include_folder();
             }
@@ -97,7 +94,7 @@ class TinySteel {
                     $this->display_error(2, ['path' => $this->path]);
                     break;
                 case 3:
-                    $this->display_error(3, ['message' => "MVC " + $mvcID->get_uid + " has already been executed."]);
+                    $this->display_error(3, ['message' => "MVC " + $mvc->get_mvc_identifier()->get_uid() + " has already been executed."]);
                     break;
             }
         }
