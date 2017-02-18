@@ -7,6 +7,4 @@ require '../classes/TinySteel/TinySteel.php';
 
 $steel = new TinySteel\TinySteel;
 
-$steel->map(new \TinySteel\MVC\MVCIdentifier('MVC-INDEX', 'index', 'IndexModel', 'IndexView', 'IndexController', [], []));
-
 $steel->init();

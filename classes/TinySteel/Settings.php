@@ -32,8 +32,6 @@ class Settings {
         $this->config['steel']['type'] = "canary";
 
         $this->config['steel']['autoinclude'] = false;
-        $this->config['steel']['useApplication'] = true;
-        $this->config['steel']['application'] = ['filepath' => dirname(__FILE__) . '/../../app/Application.php', 'fully_qualified_name' => '\MyCoolApplicationNamespace\MyCoolApplication'];
 
         $this->config['steel']['useSessions'] = false;
 

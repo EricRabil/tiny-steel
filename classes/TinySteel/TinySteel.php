@@ -4,8 +4,6 @@ namespace TinySteel;
 
 require_once 'autoload.php';
 
-use Steel\Database\Connection;
-
 /**
  * This is the main Steel class; it is used for code execution and data storage.
  * 
@@ -14,15 +12,12 @@ use Steel\Database\Connection;
  */
 class TinySteel {
 
-    private $mvcMap = [];
     private $components;
     public $directories = [];
     private $path;
     public $config;
     private $initialized = false;
     private $dir;
-    private $sreheader = "<!-- Steel Runtime Error: ";
-    public $application;
     
     public function __construct($directories = ['models' => __DIR__ . '/../../models/', 'views' => __DIR__ . '/../../views/', 'controllers' => __DIR__ . '/../../controllers/']) {
         $this->directories = $this->sanitize_path_map($directories);
@@ -39,28 +34,6 @@ class TinySteel {
         }
         return $array;
     }
-    
-    /**
-     * Prints an HTML comment with the desired error
-     * 
-     * Should only be used when urgent. Do not use this for compromising information.
-     * 
-     * @param string $message The message to pass.
-     */
-    public function throw_sre($message){
-        echo $this->sreheader . $message . ' -->'.PHP_EOL;
-    }
-
-    /**
-     * Maps an MVC to Steel.
-     * 
-     * Takes the identifier and pushes it to an array using a key identical to the value of $identifier->get_path()
-     *
-     * @param MVCIdentifier $identifier The MVCIdentifier associated with the MVC
-     */
-    public function map(\TinySteel\MVC\MVCIdentifier $identifier) {
-        $this->mvcMap[$identifier->get_path()] = $identifier;
-    }
 
     /**
      * Runs the Steel Framework.
@@ -76,23 +49,8 @@ class TinySteel {
             $this->config = $conf->getConfig();
             $this->config['steel']['useSessions'] ? session_start() : null;
             $this->config['steel']['autoinclude'] ? $this->require_includes() : null;
-            $this->config['steel']['useApplication'] ? $this->use_app_controller() : $this->application = null;
             $this->process_request();
             $this->initialized = true;
-        }
-    }
-
-    private function use_app_controller() {
-        if ($this->config['steel']['useApplication']) {
-            require_once $this->config['steel']['application']['filepath'];
-            $this->application = new $this->config['steel']['application']['fully_qualified_name']($this);
-            $reflection = new \ReflectionClass($this->application);
-            if (!$reflection->implementsInterface('\TinySteel\IApplication')) {
-                echo get_class($this->application) . " must be implement \TinySteel\IApplication";
-                exit();
-            }
-        } else {
-            return false;
         }
     }
 
@@ -130,24 +88,8 @@ class TinySteel {
         }
     }
 
-    /**
-     * Get the mapped MVCIdentifiers
-     * 
-     * @return array The array with the mapped MVCIdentifier
-     */
-    public function get_mvc_map() {
-        return $this->mvcMap;
-    }
-
     private function process_request() {
-        $this->components = explode('/', $this->path);
-        $class = $this->components[0];
-        if (!array_key_exists($class, $this->mvcMap)) {
-            $this->display_error(2, ['path' => $this->path]);
-            return;
-        }
-        $mvcID = $this->mvcMap[$class];
-        $mvc = new \TinySteel\MVC\MVCBundle($this, $mvcID);
+        $mvc = new \TinySteel\MVC\MVCBundle($this, new \TinySteel\MVC\MVCIdentifier('MVC-INDEX', 'index', 'IndexModel', 'IndexView', 'IndexController', [], []));
         $status = $mvc->runMVC();
         if ($status != 1) {
             switch ($status) {
@@ -177,8 +119,7 @@ class TinySteel {
      * @param array $args Array with the error arguments (unique to each error code)
      */
     public function display_error($int, $args) {
-        $errorID = new \TinySteel\MVC\MVCIdentifier('MVC-ERR', 'error', 'ErrorModel', 'ErrorView', 'ErrorController', ['__construct', 'main'], [$this->dir . '/MVC/IErrorModel.php', $this->dir . '/MVC/IErrorController.php']);
-        $mvc = new \TinySteel\MVC\MVCBundle($this, $errorID);
+        $mvc = new \TinySteel\MVC\MVCBundle($this, new \TinySteel\MVC\MVCIdentifier('MVC-ERR', 'error', 'ErrorModel', 'ErrorView', 'ErrorController', ['__construct', 'main'], [$this->dir . '/MVC/IErrorModel.php', $this->dir . '/MVC/IErrorController.php']));
         $mvc->init();
         $reflection = new \ReflectionClass($mvc->get_controller());
         if($reflection->implementsInterface('\TinySteel\MVC\IErrorController')){ 
